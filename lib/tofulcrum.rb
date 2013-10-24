@@ -14,10 +14,12 @@ module Tofulcrum
       end
 
       row_index = 0
+      upload_index = 0
 
       lat_index = nil
       lon_index = nil
       column_mapping = []
+      records = []
 
       CSV.foreach(file) do |row|
         is_header = row_index == 0
@@ -34,7 +36,6 @@ module Tofulcrum
 
           column_mapping = find_mapping_columns(form_id, headers, row, mapping)
         else
-
           form_values = {}
 
           column_mapping.each do |map|
@@ -59,13 +60,27 @@ module Tofulcrum
             }
           }
 
-          Fulcrum::Record.create(record)
+          records << record
         end
 
         row_index += 1
-
-        print "#{row_index.to_s.rjust(10, ' ')} records uploaded\r"
       end
+
+      thread_count = 8
+
+      mutex = Mutex.new
+
+      thread_count.times.map {
+        Thread.new(records) do |recs|
+          while record = mutex.synchronize { recs.pop }
+            Fulcrum::Record.create(record)
+            mutex.synchronize {
+              print "#{upload_index.to_s.rjust(10, ' ')} records uploaded\r"
+              upload_index += 1
+            }
+          end
+        end
+      }.each(&:join)
     end
 
     no_tasks do
