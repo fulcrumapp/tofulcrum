@@ -30,7 +30,7 @@ module Tofulcrum
           lon_name = row[lon_index]
 
           headers = row.clone
-          headers.delete_if {|v| [lat_name, lon_name].include?(v.downcase)}
+          headers.delete_if {|v| [lat_name, lon_name].include?(v)}
 
           column_mapping = find_mapping_columns(form_id, headers, row, mapping)
         else
