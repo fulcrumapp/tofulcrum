@@ -43,12 +43,12 @@ module Tofulcrum
 
             case map[:field]['type']
             when 'ChoiceField'
-              value = { choice_values: row[map[:index]].split(',') }
+              value = { choice_values: row[map[:index]].split(',') } rescue nil
             else
               value = row[map[:index]]
             end
 
-            form_values[map[:field]['key']] = value
+            form_values[map[:field]['key']] = value if value
           end
 
           record = {
