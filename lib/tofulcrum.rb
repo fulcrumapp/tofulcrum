@@ -88,7 +88,7 @@ module Tofulcrum
         [].tap do |all|
           elements.each do |element|
             all << element
-            all += flatten_elements(element['elements']) if element['elements']
+            all.concat(flatten_elements(element['elements'])) if element['elements']
           end
         end
       end
@@ -97,6 +97,7 @@ module Tofulcrum
         form = Fulcrum::Form.find(form_id, {})['form']
 
         elements = flatten_elements(form['elements'])
+        puts elements.map {|e| e['data_name']}
 
         if mapping.nil?
           mapping = headers.map {|h| "#{h}=#{h}"}.join(',')
