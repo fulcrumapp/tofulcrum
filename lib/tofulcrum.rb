@@ -16,25 +16,20 @@ module Tofulcrum
       row_index = 0
       upload_index = 0
 
-      lat_index = nil
-      lon_index = nil
       column_mapping = []
       records = []
+      system_columns = {}
 
       CSV.foreach(file) do |row|
         is_header = row_index == 0
 
         if is_header
-          lat_index, lon_index = *find_geo_columns(row).compact
-          raise 'Unable to find latitude/longitude columns' unless lat_index && lon_index
+          system_columns = find_system_columns(row)
+          raise 'Unable to find latitude/longitude columns' unless system_columns[:latitude] && system_columns[:longitude]
 
-          lat_name = row[lat_index]
-          lon_name = row[lon_index]
+          user_cols = user_columns(row, system_columns)
 
-          headers = row.clone
-          headers.delete_if {|v| [lat_name, lon_name].include?(v)}
-
-          column_mapping = find_mapping_columns(form_id, headers, row, mapping)
+          column_mapping = find_mapping_columns(form_id, user_cols, row, mapping)
         else
           form_values = {}
 
@@ -54,11 +49,13 @@ module Tofulcrum
           record = {
             record: {
               form_id: form_id,
-              latitude: row[lat_index].to_f,
-              longitude: row[lon_index].to_f,
               form_values: form_values
             }
           }
+
+          system_columns.each do |attr, index|
+            record[:record][attr] = row[index]
+          end
 
           records << record
         end
@@ -114,6 +111,30 @@ module Tofulcrum
             map << { index: source_index, field: dest_field }
           end
         end
+      end
+
+      def user_columns(row, system_columns)
+        system_column_names = system_columns.keys.map {|k| row[system_columns[k]]}
+
+        row.clone.tap do |user_columns|
+          system_columns.each do |column, index|
+            user_columns.delete_if {|v| system_column_names.include?(v)}
+          end
+        end
+      end
+
+      def find_system_columns(headers)
+        lat_columns = ['lat', 'latitude', 'y']
+        lon_columns = ['lon', 'long', 'longitude', 'x']
+
+        {
+          latitude: headers.index          {|h| lat_columns.include?(h.downcase) },
+          longitude: headers.index         {|h| lon_columns.include?(h.downcase) },
+          project: headers.index           {|h| h == 'project' },
+          status: headers.index            {|h| h == 'status' },
+          client_created_at: headers.index {|h| h == 'created_at' },
+          client_updated_at: headers.index {|h| h == 'updated_at' },
+        }.delete_if {|k, v| v.nil?}
       end
 
       def find_geo_columns(headers)
