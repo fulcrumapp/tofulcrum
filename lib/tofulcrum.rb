@@ -1,7 +1,8 @@
-require "tofulcrum/version"
+require 'tofulcrum/version'
 require 'csv'
 require 'fulcrum'
 require 'thor'
+require 'securerandom'
 
 module Tofulcrum
   class CLI < Thor
@@ -39,6 +40,13 @@ module Tofulcrum
             case map[:field]['type']
             when 'ChoiceField'
               value = { choice_values: row[map[:index]].split(',').map(&:strip) } rescue nil
+            when 'PhotoField'
+              value = []
+              row[map[:index]].split(',').map(&:strip).each do |photo|
+                key = SecureRandom.uuid
+                Fulcrum::Photo.create(File.open(photo), "image/jpeg", key, "")
+                value << { "photo_id" => key }
+              end
             else
               value = row[map[:index]]
             end
@@ -134,6 +142,14 @@ module Tofulcrum
           status: headers.index            {|h| h == 'status' },
           client_created_at: headers.index {|h| h == 'created_at' },
           client_updated_at: headers.index {|h| h == 'updated_at' },
+        }.delete_if {|k, v| v.nil?}
+      end
+
+      def find_photo_column(headers)
+        photo_column = ['photo']
+
+        {
+          photo: headers.index             {|h| h == 'photo' }
         }.delete_if {|k, v| v.nil?}
       end
 
