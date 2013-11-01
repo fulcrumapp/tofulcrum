@@ -145,14 +145,6 @@ module Tofulcrum
         }.delete_if {|k, v| v.nil?}
       end
 
-      def find_photo_column(headers)
-        photo_column = ['photo']
-
-        {
-          photo: headers.index             {|h| h == 'photo' }
-        }.delete_if {|k, v| v.nil?}
-      end
-
       def find_geo_columns(headers)
         lat_columns = ['lat', 'latitude', 'y']
         lon_columns = ['lon', 'long', 'longitude', 'x']
