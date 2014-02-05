@@ -10,7 +10,7 @@ module Tofulcrum
     def import(file, form_id, api_key, mapping=nil)
 
       Fulcrum::Api.configure do |config|
-        config.uri = 'https://api.fulcrumapp.com/api/v2'
+        config.uri = 'https://edge.fulcrumapp.com/api/v2'
         config.key = api_key
       end
 
@@ -43,9 +43,12 @@ module Tofulcrum
             when 'PhotoField'
               value = []
               row[map[:index]].split(',').map(&:strip).each do |photo|
-                key = SecureRandom.uuid
-                Fulcrum::Photo.create(File.open(photo), "image/jpeg", key, "")
-                value << { "photo_id" => key }
+                if File.exist?(photo)
+                  key = SecureRandom.uuid
+                  file = File.open(photo)
+                  Fulcrum::Photo.create(file, "image/jpeg", key, "")
+                  value << { "photo_id" => key }
+                end
               end
             else
               value = row[map[:index]]
