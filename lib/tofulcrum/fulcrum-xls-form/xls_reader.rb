@@ -11,7 +11,8 @@ module Fulcrum
       'date',
       'address',
       'signature',
-      'photos'
+      'photos',
+      'label'
     ]
 
     def self.read(file)
@@ -93,9 +94,12 @@ module Fulcrum
         hash[:elements] = [] if %w(Section Repeatable).include?(hash[:type])
         hash[:key] = SecureRandom.hex(2)
 
-        if hash[:type] == 'ChoiceField'
+        case hash[:type]
+        when 'ChoiceField'
           hash[:choices] = @choices[row['choices']] if hash[:type] == 'ChoiceField'
           hash[:allow_other] = boolean_value(row[:allow_other])
+        when 'AddressField'
+          hash[:auto_populate] = boolean_value(row[:auto_populate], true)
         end
       end
     end
@@ -121,6 +125,7 @@ module Fulcrum
       when 'address'          then 'AddressField'
       when 'signature'        then 'SignatureField'
       when 'photos'           then 'PhotoField'
+      when 'label'            then 'Label'
       else nil
       end
     end
