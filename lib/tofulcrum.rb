@@ -1,15 +1,31 @@
+require 'bundler/setup'
+require 'rubygems'
 require "tofulcrum/version"
 require 'csv'
 require 'fulcrum'
 require 'thor'
+require 'json'
+require 'roo'
+require 'axlsx'
+require 'securerandom'
+
+API_URL = 'https://api.fulcrumapp.com'
+
+require 'tofulcrum/fulcrum-xls-form/xls_reader'
+require 'tofulcrum/fulcrum-xls-form/xls_writer'
 
 module Tofulcrum
   class CLI < Thor
+    desc "xls", "Convert an Excel spreadsheet to a Fulcrum form"
+    def xls(file)
+      Fulcrum::XlsReader.read(file)
+    end
+
     desc "import", "Import a CSV into a Fulcrum app"
     def import(file, form_id, api_key, mapping=nil)
 
       Fulcrum::Api.configure do |config|
-        config.uri = 'https://api.fulcrumapp.com/api/v2'
+        config.uri = API_URL
         config.key = api_key
       end
 
