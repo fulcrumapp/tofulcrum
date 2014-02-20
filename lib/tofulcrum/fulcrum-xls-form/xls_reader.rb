@@ -5,10 +5,12 @@ module Fulcrum
       'section end',
       'text',
       'choice',
+      'yesno',
       'numeric',
       'repeatable begin',
       'repeatable end',
       'date',
+      'time',
       'address',
       'signature',
       'photos',
@@ -98,6 +100,19 @@ module Fulcrum
         when 'ChoiceField'
           hash[:choices] = @choices[row['choices']] if hash[:type] == 'ChoiceField'
           hash[:allow_other] = boolean_value(row[:allow_other])
+        when 'YesNoField'
+          positive = { label: 'Yes', value: 'yes' }
+          negative = { label: 'No',  value: 'no'  }
+          neutral  = { label: 'N/A', value: 'n/a' }
+
+          positive[:label] = positive[:value] = row['positive'] if row['positive'].present?
+          negative[:label] = negative[:value] = row['negative'] if row['negative'].present?
+          neutral[:label] = neutral[:value] = row['neutral'] if row['neutral'].present?
+
+          hash[:positive] = positive
+          hash[:negative] = negative
+          hash[:neutral]  = neutral
+          hash[:neutral_enabled] = row['neutral'].present?
         when 'AddressField'
           hash[:auto_populate] = boolean_value(row[:auto_populate], true)
         end
@@ -119,9 +134,11 @@ module Fulcrum
       when 'section begin'    then 'Section'
       when 'text'             then 'TextField'
       when 'choice'           then 'ChoiceField'
+      when 'yesno'            then 'YesNoField'
       when 'numeric'          then 'TextField'
       when 'repeatable begin' then 'Repeatable'
       when 'date'             then 'DateTimeField'
+      when 'time'             then 'TimeField'
       when 'address'          then 'AddressField'
       when 'signature'        then 'SignatureField'
       when 'photos'           then 'PhotoField'
