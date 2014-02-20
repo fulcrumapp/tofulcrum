@@ -8,7 +8,13 @@ Import CSV data into an existing Fulcrum app from the command line.
 
 ## Usage
 
+### Importing Data
+
     $ tofulcrum import somefile.csv <form_id> <api_key>
+
+### Converting Excel files to Fulcrum format
+
+    $ tofulcrum xls form_template.xls
 
 ## Notes
 
