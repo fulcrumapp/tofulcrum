@@ -97,6 +97,8 @@ module Fulcrum
         hash[:key] = SecureRandom.hex(2)
 
         case hash[:type]
+        when 'Section'
+          hash[:display] = row['display'] == 'drilldown' ? 'drilldown' : 'inline'
         when 'ChoiceField'
           hash[:choices] = @choices[row['choices']] if hash[:type] == 'ChoiceField'
           hash[:allow_other] = boolean_value(row[:allow_other])
