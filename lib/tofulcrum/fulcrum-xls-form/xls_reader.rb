@@ -27,12 +27,21 @@ module Fulcrum
     end
 
     def self.parse_schema(spreadsheet)
+      elements = make_elements(make_hash(spreadsheet.sheet('form')))
+
+      record_title_key = nil
+
+      if record_title_field = @metadata['record_title_field']
+        record_title_key = find_element(elements, record_title_field)[:key]
+      end
+
       form = { form: { name: @metadata['name'],
                        description: @metadata['description'],
                        status_field: @status_field,
-                       elements: make_elements(make_hash(spreadsheet.sheet('form'))) } }
+                       record_title_key: record_title_key,
+                       elements: elements } }
 
-      puts form.to_json
+      puts JSON.pretty_generate(form)
     end
 
     def self.make_elements(rows)
@@ -72,9 +81,16 @@ module Fulcrum
         when 'repeatable end'
           raise "repeatable end found without matching begin" if containers.count == 1
 
+          repeatable_title_field_key = nil
+
+          if (title_field = current_container[:title_field_key]) && title_field.present?
+            repeatable_title_field_key = find_element(current_container[:elements], title_field, include_repeatables: false)[:key]
+          end
+
+          current_container[:title_field_key] = repeatable_title_field_key
+
           containers = containers[0..-2]
           current_container = containers.last
-
         end
       end
 
@@ -99,6 +115,8 @@ module Fulcrum
         case hash[:type]
         when 'Section'
           hash[:display] = row['display'] == 'drilldown' ? 'drilldown' : 'inline'
+        when 'Repeatable'
+          hash[:title_field_key] = row['title_field']
         when 'ChoiceField'
           hash[:choices] = @choices[row['choices']] if hash[:type] == 'ChoiceField'
           hash[:allow_other] = boolean_value(row[:allow_other])
@@ -247,6 +265,25 @@ module Fulcrum
       end
 
       rows
+    end
+
+    def self.find_element(elements, data_name, opts={})
+      all_elements(elements, opts).find do |e|
+        e[:data_name] == data_name
+      end
+    end
+
+    def self.all_elements(elements, opts={})
+      elements.inject([]) do |array, el|
+        array << el
+        exclude_repeatables = !!opts[:exclude_repeatables]
+        if exclude_repeatables
+          array += all_elements(el[:elements], opts) if el[:elements] && el[:type] != 'Repeatable'
+        else
+          array += all_elements(el[:elements], opts) if el[:elements]
+        end
+        array
+      end
     end
   end
 end
